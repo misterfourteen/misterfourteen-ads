@@ -16,6 +16,11 @@ import CampaignBuilder from "./pages/CampaignBuilder";
 import MetaConnect from "./pages/MetaConnect";
 import Pricing from "./pages/Pricing";
 import AdminPanel from "./pages/AdminPanel";
+import ContentLibrary from "./pages/ContentLibrary";
+import Templates from "./pages/Templates";
+import ABTesting from "./pages/ABTesting";
+import CaseStudies from "./pages/CaseStudies";
+import SupportChat from "./components/SupportChat";
 import DashboardLayout from "./components/DashboardLayout";
 import { useAuth } from "./_core/hooks/useAuth";
 import { Loader2 } from "lucide-react";
@@ -116,6 +121,27 @@ function Router() {
           </DashboardLayout>
         )}
       </Route>
+      <Route path="/library">
+        {() => (
+          <DashboardLayout>
+            <ProtectedRoute component={ContentLibrary} />
+          </DashboardLayout>
+        )}
+      </Route>
+      <Route path="/templates">
+        {() => (
+          <DashboardLayout>
+            <ProtectedRoute component={Templates} />
+          </DashboardLayout>
+        )}
+      </Route>
+      <Route path="/ab-testing">
+        {() => (
+          <DashboardLayout>
+            <ProtectedRoute component={ABTesting} />
+          </DashboardLayout>
+        )}
+      </Route>
       <Route path="/admin">
         {() => (
           <DashboardLayout>
@@ -124,6 +150,7 @@ function Router() {
         )}
       </Route>
       <Route path="/404" component={NotFound} />
+      <Route path="/casos-de-exito" component={CaseStudies} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -136,6 +163,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <SupportChat />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

@@ -56,3 +56,16 @@
 - [x] robots.txt optimizado
 - [x] URLs canónicas actualizadas a misterfourteen.com
 - [x] Fix: sitemap.xml servido con Content-Type application/xml
+
+## Mejoras v2 — App Top
+- [x] Stripe integrado con feature gating real por plan
+- [x] Historial de contenidos generados (biblioteca personal)
+- [x] Onboarding guiado post-registro (3 pasos con barra de progreso)
+- [x] Previsualización de anuncios en mockup real Instagram/Facebook
+- [x] Biblioteca de plantillas de campañas por objetivo fitness
+- [x] A/B testing automático de copies e imágenes
+- [x] Página de casos de éxito / resultados
+- [x] Chat de soporte in-app con IA
+- [ ] Informe semanal automático por email (requiere servicio de email externo)
+- [ ] Modo oscuro/claro switchable (diseño oscuro fijo actualmente)
+- [ ] PWA instalable en móvil (requiere service worker)

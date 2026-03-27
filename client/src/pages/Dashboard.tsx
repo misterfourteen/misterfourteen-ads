@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import OnboardingGuide from "@/components/OnboardingGuide";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
@@ -38,6 +39,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
+      <OnboardingGuide />
       {/* Welcome */}
       <div className="flex items-start justify-between">
         <div>

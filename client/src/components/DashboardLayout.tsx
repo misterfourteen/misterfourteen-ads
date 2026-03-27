@@ -28,7 +28,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 import {
   LayoutDashboard, Brain, Sparkles, FileText, ImageIcon,
   Megaphone, PlusCircle, Link2, BarChart3, Settings,
-  LogOut, PanelLeft, Shield, ChevronDown, Zap
+  LogOut, PanelLeft, Shield, ChevronDown, Zap, BookOpen, Video, LayoutTemplate, FlaskConical
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -48,8 +48,11 @@ const menuGroups = [
     label: "Generadores IA",
     items: [
       { icon: Sparkles, label: "Generar Copy", path: "/generate/copy" },
-      { icon: FileText, label: "Generar Guión", path: "/generate/script" },
+      { icon: Video, label: "Generar Guión", path: "/generate/script" },
       { icon: ImageIcon, label: "Generar Imagen", path: "/generate/image" },
+      { icon: BookOpen, label: "Mi Biblioteca", path: "/library" },
+      { icon: LayoutTemplate, label: "Plantillas", path: "/templates" },
+      { icon: FlaskConical, label: "A/B Testing", path: "/ab-testing" },
     ],
   },
   {

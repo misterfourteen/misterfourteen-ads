@@ -21,6 +21,15 @@ import {
 } from "./db";
 import { invokeLLM } from "./_core/llm";
 import { generateImage } from "./_core/imageGeneration";
+import Stripe from "stripe";
+import { getPlanLimits, PLANS } from "./stripe/products";
+import { getDb } from "./db";
+import { users } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
+  apiVersion: "2026-03-25.dahlia",
+});
 
 // ─── Admin procedure ───────────────────────────────────────────────────────────
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -285,9 +294,84 @@ No text overlays. Clean, conversion-focused composition.`;
     .mutation(async ({ ctx, input }) => {
       return toggleFavoriteContent(input.id, ctx.user.id, input.isFavorite);
     }),
-});
 
-// ─── Campaigns Router ──────────────────────────────────────────────────────────
+  abTest: protectedProcedure
+    .input(z.object({
+      objective: z.string(),
+      adFormat: z.string(),
+      additionalContext: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const brain = await getBrandBrainByUserId(ctx.user.id);
+      if (!brain) throw new TRPCError({ code: "BAD_REQUEST", message: "Completa tu Brand Brain primero" });
+
+      const systemMsg = brain.masterPrompt ?? `Eres un experto copywriter de Meta Ads para el sector fitness. Hablas de forma directa, honesta y orientada a resultados.`;
+      const userMsg = `Genera exactamente 3 variantes de copy publicitario para un test A/B en Meta Ads.
+
+Objetivo: ${input.objective}
+Formato: ${input.adFormat}
+${input.additionalContext ? `Contexto adicional: ${input.additionalContext}` : ""}
+
+Cada variante debe usar un ángulo psicológico DIFERENTE:
+- Variante A: ángulo emocional (dolor/deseo)
+- Variante B: ángulo racional (lógica/resultados/números)
+- Variante C: ángulo de prueba social (testimonios/comunidad)
+
+Devuelve JSON con esta estructura exacta:
+{
+  "variants": [
+    { "id": "a", "label": "Variante A", "angle": "Emocional", "hook": "primera frase gancho", "content": "copy completo" },
+    { "id": "b", "label": "Variante B", "angle": "Racional", "hook": "primera frase gancho", "content": "copy completo" },
+    { "id": "c", "label": "Variante C", "angle": "Prueba social", "hook": "primera frase gancho", "content": "copy completo" }
+  ],
+  "recommendation": "cuál variante recomiendas probar primero y por qué (2-3 frases)",
+  "testingTip": "consejo específico para hacer el test en Meta Ads con este objetivo"
+}`;
+
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: systemMsg },
+          { role: "user", content: userMsg },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "ab_test_result",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                variants: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      id: { type: "string" },
+                      label: { type: "string" },
+                      angle: { type: "string" },
+                      hook: { type: "string" },
+                      content: { type: "string" },
+                    },
+                    required: ["id", "label", "angle", "hook", "content"],
+                    additionalProperties: false,
+                  },
+                },
+                recommendation: { type: "string" },
+                testingTip: { type: "string" },
+              },
+              required: ["variants", "recommendation", "testingTip"],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+
+      const raw = response.choices[0]?.message?.content ?? "{}";
+      const parsed = JSON.parse(typeof raw === "string" ? raw : JSON.stringify(raw));
+      return parsed;
+    }),
+});
+// ─── Campaigns Routerr ──────────────────────────────────────────────────────────
 const campaignsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     return getCampaignsByUser(ctx.user.id);
@@ -371,6 +455,91 @@ const metaRouter = router({
     }),
 });
 
+// ─── Stripe Router ────────────────────────────────────────────────────────────
+const stripeRouter = router({
+  getPlans: publicProcedure.query(() => {
+    return Object.entries(PLANS).map(([key, plan]) => ({
+      key,
+      name: plan.name,
+      description: plan.description,
+      priceMonthly: plan.priceMonthly,
+      currency: plan.currency,
+      features: plan.features,
+      limits: plan.limits,
+    }));
+  }),
+
+  getMySubscription: protectedProcedure.query(async ({ ctx }) => {
+    return {
+      plan: ctx.user.subscriptionPlan,
+      status: ctx.user.subscriptionStatus,
+      limits: getPlanLimits(ctx.user.subscriptionPlan ?? "free"),
+    };
+  }),
+
+  createCheckout: protectedProcedure
+    .input(z.object({ planKey: z.enum(["diy", "done_with_you", "agency"]) }))
+    .mutation(async ({ ctx, input }) => {
+      const plan = PLANS[input.planKey];
+      if (!plan.stripePriceId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Plan price not configured" });
+      }
+      const origin = ctx.req.headers.origin as string ?? "https://app.misterfourteen.com";
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        payment_method_types: ["card"],
+        line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+        customer_email: ctx.user.email ?? undefined,
+        allow_promotion_codes: true,
+        client_reference_id: ctx.user.id.toString(),
+        metadata: {
+          user_id: ctx.user.id.toString(),
+          customer_email: ctx.user.email ?? "",
+          customer_name: ctx.user.name ?? "",
+        },
+        success_url: `${origin}/dashboard?subscription=success`,
+        cancel_url: `${origin}/pricing?canceled=true`,
+      });
+      return { url: session.url };
+    }),
+
+  createPortal: protectedProcedure.mutation(async ({ ctx }) => {
+    if (!ctx.user.stripeCustomerId) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "No active subscription" });
+    }
+    const origin = ctx.req.headers.origin as string ?? "https://app.misterfourteen.com";
+    const session = await stripe.billingPortal.sessions.create({
+      customer: ctx.user.stripeCustomerId,
+      return_url: `${origin}/dashboard`,
+    });
+    return { url: session.url };
+  }),
+
+  checkUsage: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) return { copies: 0, scripts: 0, images: 0 };
+    const limits = getPlanLimits(ctx.user.subscriptionPlan ?? "free");
+    // Count this month's generations
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    const { generatedContents } = await import("../drizzle/schema");
+    const { and, gte, count } = await import("drizzle-orm");
+    const rows = await db
+      .select({ type: generatedContents.type, count: count() })
+      .from(generatedContents)
+      .where(and(eq(generatedContents.userId, ctx.user.id), gte(generatedContents.createdAt, startOfMonth)))
+      .groupBy(generatedContents.type);
+    const usage = { copies: 0, scripts: 0, images: 0 };
+    for (const row of rows) {
+      if (row.type === "copy") usage.copies = row.count;
+      if (row.type === "script") usage.scripts = row.count;
+      if (row.type === "image") usage.images = row.count;
+    }
+    return { usage, limits };
+  }),
+});
+
 // ─── Admin Router ──────────────────────────────────────────────────────────────
 const adminRouter = router({
   getUsers: adminProcedure.query(async () => {
@@ -385,8 +554,43 @@ const adminRouter = router({
     return getPlatformStats();
   }),
 });
+// ─── Support Router ─────────────────────────────────────────────────────────────────────────────
+const supportRouter = router({
+  chat: protectedProcedure
+    .input(z.object({
+      message: z.string().min(1).max(500),
+      history: z.array(z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string(),
+      })).optional().default([]),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const brain = await getBrandBrainByUserId(ctx.user.id);
+      const systemMsg = `Eres el asistente de soporte de Mister Fourteen, una plataforma SaaS de creación y gestión de anuncios en Meta Ads con inteligencia artificial para entrenadores y nutricionistas online.
 
-// ─── App Router ────────────────────────────────────────────────────────────────
+Tu rol:
+- Ayudar a los usuarios con dudas sobre la plataforma (Brand Brain, generadores de IA, campañas, A/B testing, conexión con Meta)
+- Dar consejos prácticos sobre Meta Ads para el sector fitness
+- Ser directo, claro y profesional. Sin rodeos.
+- Si el usuario tiene Brand Brain configurado, personaliza tus respuestas a su negocio
+
+${brain ? `Contexto del usuario: ${brain.businessName ?? ""} - Nicho: ${brain.niche ?? ""} - Plan: ${ctx.user.subscriptionPlan ?? "free"}` : `El usuario aún no ha configurado su Brand Brain.`}
+
+No inventes funcionalidades que no existen. Si no sabes algo, dílo con honestidad.`;
+
+      const messages = [
+        { role: "system" as const, content: systemMsg },
+        ...input.history.map(h => ({ role: h.role as "user" | "assistant", content: h.content })),
+        { role: "user" as const, content: input.message },
+      ];
+
+      const response = await invokeLLM({ messages });
+      const reply = response.choices[0]?.message?.content ?? "Lo siento, no pude procesar tu mensaje. Inténtalo de nuevo.";
+      return { reply: typeof reply === "string" ? reply : JSON.stringify(reply) };
+    }),
+});
+
+// ─── App Router ─────────────────────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -401,7 +605,8 @@ export const appRouter = router({
   generate: generateRouter,
   campaigns: campaignsRouter,
   meta: metaRouter,
-  admin: adminRouter,
+   admin: adminRouter,
+  stripe: stripeRouter,
+  support: supportRouter,
 });
-
 export type AppRouter = typeof appRouter;
