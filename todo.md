@@ -51,3 +51,7 @@
 
 ## Fixes y Mejoras
 - [x] SEO: meta descripción, palabras clave y Open Graph en index.html
+- [x] Imagen Open Graph 1200x630px generada con IA
+- [x] sitemap.xml con rutas públicas
+- [x] robots.txt optimizado
+- [x] URLs canónicas actualizadas a misterfourteen.com

@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Allow: /pricing
+Allow: /dashboard
+Allow: /generate/copy
+Allow: /generate/script
+Allow: /generate/image
+Allow: /campaigns
+
+# Bloquear rutas de administración y API
+Disallow: /admin
+Disallow: /api/
+Disallow: /onboarding
+Disallow: /brand-brain
+Disallow: /campaigns/new
+Disallow: /meta-connect
+
+# Sitemap
+Sitemap: https://misterfourteen.com/sitemap.xml
