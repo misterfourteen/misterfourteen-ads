@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import path from "path";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
@@ -33,6 +34,18 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Servir sitemap.xml y robots.txt con Content-Type correcto
+  app.get("/sitemap.xml", (_req, res) => {
+    const sitemapPath = path.resolve(process.cwd(), "client", "public", "sitemap.xml");
+    res.setHeader("Content-Type", "application/xml; charset=utf-8");
+    res.sendFile(sitemapPath);
+  });
+  app.get("/robots.txt", (_req, res) => {
+    const robotsPath = path.resolve(process.cwd(), "client", "public", "robots.txt");
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.sendFile(robotsPath);
+  });
+
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   // tRPC API

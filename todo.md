@@ -55,3 +55,4 @@
 - [x] sitemap.xml con rutas públicas
 - [x] robots.txt optimizado
 - [x] URLs canónicas actualizadas a misterfourteen.com
+- [x] Fix: sitemap.xml servido con Content-Type application/xml
