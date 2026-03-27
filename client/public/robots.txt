@@ -16,4 +16,4 @@ Disallow: /campaigns/new
 Disallow: /meta-connect
 
 # Sitemap
-Sitemap: https://misterfourteen.com/sitemap.xml
+Sitemap: https://app.misterfourteen.com/sitemap.xml
