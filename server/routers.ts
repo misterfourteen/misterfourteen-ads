@@ -31,7 +31,8 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 // ─── Brand Brain Router ────────────────────────────────────────────────────────
 const brandBrainRouter = router({
   getMine: protectedProcedure.query(async ({ ctx }) => {
-    return getBrandBrainByUserId(ctx.user.id);
+    const brain = await getBrandBrainByUserId(ctx.user.id);
+    return brain ?? null;
   }),
 
   save: protectedProcedure
@@ -330,7 +331,8 @@ const campaignsRouter = router({
 // ─── Meta Connection Router ────────────────────────────────────────────────────
 const metaRouter = router({
   getConnection: protectedProcedure.query(async ({ ctx }) => {
-    return getMetaConnection(ctx.user.id);
+    const conn = await getMetaConnection(ctx.user.id);
+    return conn ?? null;
   }),
 
   saveConnection: protectedProcedure
