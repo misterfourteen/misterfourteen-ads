@@ -1,0 +1,108 @@
+CREATE TABLE `brandBrains` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`businessName` varchar(255) NOT NULL,
+	`niche` varchar(255) NOT NULL,
+	`subNiche` varchar(255),
+	`targetAgeRange` varchar(64),
+	`targetGender` enum('male','female','all') DEFAULT 'all',
+	`targetPains` text,
+	`targetDesires` text,
+	`targetObjections` text,
+	`communicationTone` enum('motivational','scientific','direct','friendly','rebel') DEFAULT 'direct',
+	`brandVoice` text,
+	`wordsToAvoid` text,
+	`mainDifferentiator` text,
+	`successCases` text,
+	`methodology` text,
+	`logoUrl` varchar(512),
+	`primaryColor` varchar(7) DEFAULT '#000000',
+	`secondaryColor` varchar(7) DEFAULT '#ffffff',
+	`accentColor` varchar(7) DEFAULT '#ff0000',
+	`visualStyle` enum('minimalist','bold','elegant','energetic','professional') DEFAULT 'professional',
+	`masterPrompt` text,
+	`isComplete` boolean NOT NULL DEFAULT false,
+	`onboardingStep` int NOT NULL DEFAULT 1,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `brandBrains_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `campaigns` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`brandBrainId` int NOT NULL,
+	`name` varchar(255) NOT NULL,
+	`objective` enum('awareness','traffic','engagement','leads','conversions','sales') NOT NULL,
+	`status` enum('draft','active','paused','completed','error') NOT NULL DEFAULT 'draft',
+	`adCopyId` int,
+	`adScriptId` int,
+	`adImageId` int,
+	`primaryText` text,
+	`headline` varchar(255),
+	`description` text,
+	`callToAction` varchar(64),
+	`destinationUrl` varchar(512),
+	`dailyBudget` decimal(10,2),
+	`totalBudget` decimal(10,2),
+	`startDate` timestamp,
+	`endDate` timestamp,
+	`targetLocations` text,
+	`targetInterests` text,
+	`ageMin` int DEFAULT 18,
+	`ageMax` int DEFAULT 65,
+	`metaAdAccountId` varchar(128),
+	`metaCampaignId` varchar(128),
+	`metaAdSetId` varchar(128),
+	`metaAdId` varchar(128),
+	`metaAccessToken` text,
+	`impressions` int DEFAULT 0,
+	`clicks` int DEFAULT 0,
+	`spend` decimal(10,2) DEFAULT '0',
+	`conversions` int DEFAULT 0,
+	`ctr` decimal(5,4) DEFAULT '0',
+	`cpc` decimal(10,2) DEFAULT '0',
+	`lastMetricsUpdate` timestamp,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `campaigns_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `generatedContents` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`brandBrainId` int NOT NULL,
+	`type` enum('copy','script','image') NOT NULL,
+	`prompt` text,
+	`content` text,
+	`imageUrl` varchar(512),
+	`imagePrompt` text,
+	`adFormat` varchar(64),
+	`objective` varchar(128),
+	`isFavorite` boolean NOT NULL DEFAULT false,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `generatedContents_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `metaConnections` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`accessToken` text NOT NULL,
+	`tokenExpiry` timestamp,
+	`metaUserId` varchar(128),
+	`metaUserName` varchar(255),
+	`adAccountId` varchar(128),
+	`adAccountName` varchar(255),
+	`pageId` varchar(128),
+	`pageName` varchar(255),
+	`isActive` boolean NOT NULL DEFAULT true,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `metaConnections_id` PRIMARY KEY(`id`),
+	CONSTRAINT `metaConnections_userId_unique` UNIQUE(`userId`)
+);
+--> statement-breakpoint
+ALTER TABLE `users` ADD `subscriptionPlan` enum('free','diy','done_with_you','agency') DEFAULT 'free' NOT NULL;--> statement-breakpoint
+ALTER TABLE `users` ADD `subscriptionStatus` enum('active','inactive','trialing','canceled') DEFAULT 'inactive' NOT NULL;--> statement-breakpoint
+ALTER TABLE `users` ADD `stripeCustomerId` varchar(128);--> statement-breakpoint
+ALTER TABLE `users` ADD `stripeSubscriptionId` varchar(128);
