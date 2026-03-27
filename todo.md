@@ -48,3 +48,6 @@
 - [ ] Control de acceso por plan (feature gating)
 - [x] Tests vitest completos (8 tests pasando)
 - [x] Checkpoint final y entrega
+
+## Fixes y Mejoras
+- [x] SEO: meta descripción, palabras clave y Open Graph en index.html
