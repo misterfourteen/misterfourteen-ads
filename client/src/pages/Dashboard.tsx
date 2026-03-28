@@ -277,15 +277,7 @@ export default function Dashboard() {
 
           {(() => {
             const selectedChart = CHART_METRICS.find(m => m.key === chartMetric)!;
-            const commonProps = {
-              data: MOCK_CHART_DATA,
-              children: [
-                <CartesianGrid key="grid" strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />,
-                <XAxis key="x" dataKey="day" tick={{ fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />,
-                <YAxis key="y" tick={{ fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />,
-                <Tooltip key="tooltip" contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", fontSize: "12px" }} />,
-              ]
-            };
+            const tooltipStyle = { background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", fontSize: "12px" };
             return (
               <ResponsiveContainer width="100%" height={180}>
                 {chartType === "area" ? (
@@ -296,17 +288,26 @@ export default function Dashboard() {
                         <stop offset="95%" stopColor={selectedChart.color} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    {commonProps.children}
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={tooltipStyle} />
                     <Area type="monotone" dataKey={chartMetric} stroke={selectedChart.color} fill="url(#chartGrad)" strokeWidth={2} name={selectedChart.label} />
                   </AreaChart>
                 ) : chartType === "bar" ? (
                   <BarChart data={MOCK_CHART_DATA}>
-                    {commonProps.children}
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={tooltipStyle} />
                     <Bar dataKey={chartMetric} fill={selectedChart.color} radius={[4, 4, 0, 0]} name={selectedChart.label} />
                   </BarChart>
                 ) : (
                   <LineChart data={MOCK_CHART_DATA}>
-                    {commonProps.children}
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={tooltipStyle} />
                     <Line type="monotone" dataKey={chartMetric} stroke={selectedChart.color} strokeWidth={2} dot={{ fill: selectedChart.color, r: 3 }} name={selectedChart.label} />
                   </LineChart>
                 )}
