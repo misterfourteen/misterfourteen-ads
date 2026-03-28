@@ -1,0 +1,1 @@
+ALTER TABLE `campaigns` MODIFY COLUMN `objective` enum('awareness','reach','traffic','engagement','followers','video_views','leads','messages','conversions','catalog_sales','store_visits') NOT NULL;

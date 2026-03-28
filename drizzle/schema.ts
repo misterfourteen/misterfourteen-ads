@@ -84,7 +84,7 @@ export const campaigns = mysqlTable("campaigns", {
   userId: int("userId").notNull(),
   brandBrainId: int("brandBrainId").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
-  objective: mysqlEnum("objective", ["awareness", "traffic", "engagement", "leads", "conversions", "sales"]).notNull(),
+  objective: mysqlEnum("objective", ["awareness", "reach", "traffic", "engagement", "followers", "video_views", "leads", "messages", "conversions", "catalog_sales", "store_visits"]).notNull(),
   status: mysqlEnum("status", ["draft", "active", "paused", "completed", "error"]).default("draft").notNull(),
   // Contenido del anuncio
   adCopyId: int("adCopyId"),

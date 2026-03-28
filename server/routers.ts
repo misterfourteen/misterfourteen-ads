@@ -196,10 +196,13 @@ Formato de respuesta: JSON con array "copies" con objetos {primaryText, headline
   script: protectedProcedure
     .input(
       z.object({
-        duration: z.enum(["15s", "30s", "60s"]),
-        platform: z.enum(["reels", "stories", "feed"]),
+        duration: z.enum(["15s", "30s", "60s", "90s", "2min"]),
+        platform: z.enum(["reels", "stories", "feed", "youtube_shorts"]),
         objective: z.string(),
+        scriptStyle: z.enum(["storytelling", "direct", "testimonial", "educational", "provocative"]).optional(),
+        tone: z.enum(["urgency", "curiosity", "authority", "empathy", "motivational"]).optional(),
         additionalContext: z.string().optional(),
+        quantity: z.number().min(1).max(3).optional().default(1),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -208,46 +211,96 @@ Formato de respuesta: JSON con array "copies" con objetos {primaryText, headline
 
       const systemMsg = brain.masterPrompt ?? `Eres un experto en guiones de vídeo publicitario para el sector fitness.`;
 
-      const userMsg = `Genera un guión de vídeo publicitario para Meta Ads:
+      const styleGuide: Record<string, string> = {
+        storytelling: "narrativa de transformación personal, historia con inicio-conflicto-resolución",
+        direct: "directo al grano, beneficios claros, sin rodeos, CTA fuerte",
+        testimonial: "voz de cliente real, experiencia personal, resultados concretos",
+        educational: "enseña algo valioso, posiciona como experto, educa antes de vender",
+        provocative: "rompe creencias, genera controversia positiva, desafía el status quo",
+      };
+
+      const toneGuide: Record<string, string> = {
+        urgency: "crea urgencia real, escasez, tiempo limitado",
+        curiosity: "genera intriga, deja preguntas abiertas, hook misterioso",
+        authority: "habla desde la experiencia, datos y resultados, posición de experto",
+        empathy: "conecta emocionalmente, entiende el dolor, habla de tú a tú",
+        motivational: "energía alta, inspiración, transforma la mentalidad",
+      };
+
+      const chosenStyle = input.scriptStyle ?? "direct";
+      const chosenTone = input.tone ?? "motivational";
+      const quantity = input.quantity ?? 1;
+
+      const buildPrompt = (variantNum: number) => `Genera un guión de vídeo publicitario para Meta Ads (variante ${variantNum} de ${quantity}):
 - Duración: ${input.duration}
 - Plataforma: ${input.platform}
 - Objetivo: ${input.objective}
 - Negocio: ${brain.businessName} (${brain.niche})
-- Tono: ${brain.communicationTone ?? "directo"}
+- Tono de marca: ${brain.communicationTone ?? "directo"}
+- Estilo de guión: ${styleGuide[chosenStyle]}
+- Tono emocional: ${toneGuide[chosenTone]}
 - Dolor del cliente: ${brain.targetPains ?? ""}
 - Diferenciador: ${brain.mainDifferentiator ?? ""}
 ${input.additionalContext ? `- Contexto: ${input.additionalContext}` : ""}
+${quantity > 1 ? `- IMPORTANTE: Esta es la variante ${variantNum}. Debe ser DIFERENTE a las otras variantes en enfoque y estructura.` : ""}
 
-El guión debe incluir: hook (primeros 3 segundos), desarrollo, CTA. Incluye indicaciones de cámara y texto en pantalla cuando sea relevante.`;
+Estructura obligatoria:
+**HOOK (0-3s):** [primera frase gancho, texto en pantalla]
+**DESARROLLO:** [cuerpo del guión con indicaciones de cámara]
+**CTA:** [llamada a la acción clara]
 
-      const response = await invokeLLM({
-        messages: [
-          { role: "system", content: systemMsg },
-          { role: "user", content: userMsg },
-        ],
+Incluye indicaciones de cámara entre corchetes y texto en pantalla en MAYÚSCULAS.`;
+
+      // Generate multiple scripts in parallel if quantity > 1
+      const generatePromises = Array.from({ length: quantity }, (_, i) =>
+        invokeLLM({
+          messages: [
+            { role: "system", content: systemMsg },
+            { role: "user", content: buildPrompt(i + 1) },
+          ],
+        })
+      );
+
+      const responses = await Promise.all(generatePromises);
+      const scripts = responses.map(r => {
+        const raw = r.choices[0]?.message?.content;
+        return typeof raw === "string" ? raw : JSON.stringify(raw) ?? "";
       });
 
-      const rawContent = response.choices[0]?.message?.content;
-      const scriptContent = typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent) ?? "";
+      // Save all scripts
+      const savedItems = await Promise.all(
+        scripts.map(scriptContent =>
+          saveGeneratedContent({
+            userId: ctx.user.id,
+            brandBrainId: brain.id,
+            type: "script",
+            content: scriptContent,
+            adFormat: input.platform,
+            objective: input.objective,
+          })
+        )
+      );
 
-      const saved = await saveGeneratedContent({
-        userId: ctx.user.id,
-        brandBrainId: brain.id,
-        type: "script",
-        content: scriptContent,
-        adFormat: input.platform,
-        objective: input.objective,
-      });
-
-      return { id: saved.id, script: scriptContent };
+      return {
+        scripts: savedItems.map((saved, i) => ({
+          id: saved.id,
+          script: scripts[i],
+          style: chosenStyle,
+          tone: chosenTone,
+        })),
+        // Keep backward compat
+        id: savedItems[0].id,
+        script: scripts[0],
+      };
     }),
 
   image: protectedProcedure
     .input(
       z.object({
-        adFormat: z.enum(["feed", "story", "reel_cover"]),
+        adFormat: z.enum(["feed", "story", "reel_cover", "banner", "carousel", "portrait"]),
         concept: z.string(),
-        includeText: z.boolean().optional(),
+        visualStyle: z.enum(["photorealistic", "illustration", "minimalist", "bold", "cinematic"]).optional(),
+        quantity: z.number().min(1).max(4).optional().default(1),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -255,32 +308,68 @@ El guión debe incluir: hook (primeros 3 segundos), desarrollo, CTA. Incluye ind
       if (!brain?.isComplete) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Completa tu Brand Brain primero" });
 
       const formatDimensions: Record<string, string> = {
-        feed: "square 1:1",
-        story: "vertical 9:16",
-        reel_cover: "vertical 9:16",
+        feed: "square 1:1 aspect ratio",
+        story: "vertical 9:16 aspect ratio",
+        reel_cover: "vertical 9:16 aspect ratio",
+        banner: "horizontal 1.91:1 aspect ratio, landscape",
+        carousel: "square 1:1 aspect ratio, carousel card",
+        portrait: "vertical 4:5 aspect ratio",
       };
 
-      const imagePrompt = `Professional advertising image for ${brain.businessName}, a ${brain.niche} brand. 
-Style: ${brain.visualStyle ?? "professional"}, modern, high-quality.
-Color palette: primary ${brain.primaryColor ?? "#000000"}, accent ${brain.accentColor ?? "#ff0000"}.
+      const styleGuide: Record<string, string> = {
+        photorealistic: "ultra-realistic photography, professional lighting, DSLR quality",
+        illustration: "digital illustration, vector art style, clean lines",
+        minimalist: "minimalist design, lots of white space, clean and simple",
+        bold: "bold colors, high contrast, dynamic composition, energetic",
+        cinematic: "cinematic photography, dramatic lighting, film-like quality",
+      };
+
+      const chosenStyle = input.visualStyle ?? (brain.visualStyle as string) ?? "photorealistic";
+      const styleDesc = styleGuide[chosenStyle] ?? styleGuide.photorealistic;
+
+      const quantity = input.quantity ?? 1;
+      const imagePrompt = `Professional advertising image for ${brain.businessName}, a ${brain.niche} fitness brand. 
+Style: ${styleDesc}.
+Color palette: primary ${brain.primaryColor ?? "#1a1a2e"}, accent ${brain.accentColor ?? "#e94560"}.
 Concept: ${input.concept}.
 Format: ${formatDimensions[input.adFormat]}.
-Target audience: fitness and nutrition professionals.
-No text overlays. Clean, conversion-focused composition.`;
+Target audience: fitness and nutrition professionals seeking transformation.
+No text overlays. Clean, conversion-focused composition. High production value.`;
 
-      const { url: imageUrl } = await generateImage({ prompt: imagePrompt });
+      // Generate multiple images in parallel
+      const generatePromises = Array.from({ length: quantity }, () =>
+        generateImage({ prompt: imagePrompt })
+      );
+      const generatedImages = await Promise.all(generatePromises);
 
-      const saved = await saveGeneratedContent({
-        userId: ctx.user.id,
-        brandBrainId: brain.id,
-        type: "image",
-        imageUrl,
-        imagePrompt,
-        adFormat: input.adFormat,
-        objective: input.concept,
-      });
+      // Save all generated images
+      const savedItems = await Promise.all(
+        generatedImages.map(({ url: imageUrl }) =>
+          saveGeneratedContent({
+            userId: ctx.user.id,
+            brandBrainId: brain.id,
+            type: "image",
+            imageUrl,
+            imagePrompt,
+            adFormat: input.adFormat,
+            objective: input.concept,
+          })
+        )
+      );
 
-      return { id: saved.id, imageUrl, prompt: imagePrompt };
+      return {
+        images: savedItems.map((saved, i) => ({
+          id: saved.id,
+          imageUrl: generatedImages[i].url,
+          prompt: imagePrompt,
+          format: input.adFormat,
+          style: chosenStyle,
+        })),
+        // Keep backward compat
+        id: savedItems[0].id,
+        imageUrl: generatedImages[0].url,
+        prompt: imagePrompt,
+      };
     }),
 
   history: protectedProcedure
@@ -391,7 +480,7 @@ const campaignsRouter = router({
         id: z.number().optional(),
         brandBrainId: z.number(),
         name: z.string().min(1),
-        objective: z.enum(["awareness", "traffic", "engagement", "leads", "conversions", "sales"]),
+        objective: z.enum(["awareness", "reach", "traffic", "engagement", "followers", "video_views", "leads", "messages", "conversions", "catalog_sales", "store_visits"]),
         primaryText: z.string().optional(),
         headline: z.string().optional(),
         description: z.string().optional(),

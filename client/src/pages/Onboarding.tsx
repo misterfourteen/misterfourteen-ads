@@ -10,6 +10,7 @@ import {
   Brain, Building2, Users, MessageSquare, Trophy,
   Palette, CheckCircle2, ArrowRight, ArrowLeft, Sparkles, Loader2
 } from "lucide-react";
+import { useStepNavigation } from "@/hooks/useStepNavigation";
 
 const STEPS = [
   { id: 1, title: "Tu Negocio", icon: Building2, desc: "Cuéntanos sobre tu marca" },
@@ -63,6 +64,9 @@ export default function Onboarding() {
 
   const saveMutation = trpc.brandBrain.save.useMutation();
   const generatePromptMutation = trpc.brandBrain.generateMasterPrompt.useMutation();
+
+  // Intercept browser back button to go to previous step instead of leaving
+  useStepNavigation(step, setStep, { minStep: 1, onExit: () => setLocation("/dashboard") });
 
   const update = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }));
 

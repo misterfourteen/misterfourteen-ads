@@ -69,3 +69,36 @@
 - [ ] Informe semanal automático por email (requiere servicio de email externo)
 - [ ] Modo oscuro/claro switchable (diseño oscuro fijo actualmente)
 - [ ] PWA instalable en móvil (requiere service worker)
+
+## Mejoras v3 — Revisión completa
+
+### Generador de Imágenes
+- [x] Múltiples variaciones simultáneas (1, 2, 4 imágenes a la vez)
+- [x] Todos los formatos Meta: feed 1:1, story 9:16, reel cover, banner horizontal 1.91:1, carrusel, portrait 4:5
+- [x] Estilos visuales: fotorealista, ilustración, minimalista, bold, cinematográfico
+- [x] Descarga en múltiples formatos (PNG, JPG, WebP)
+- [x] Selector de cantidad de variaciones
+
+### Generador de Guiones
+- [x] Múltiples variaciones simultáneas (hasta 3 guiones a la vez)
+- [x] Estilos de guión: storytelling, directo, testimonial, educativo, provocador
+- [x] Tonos adicionales: urgencia, curiosidad, autoridad
+- [x] Vista comparativa de variaciones
+
+### Constructor de Campañas
+- [x] Todos los objetivos Meta: Reconocimiento, Alcance, Tráfico, Interacción, Nuevos seguidores, Reproducciones de vídeo, Generación de clientes potenciales, Mensajes, Conversiones, Ventas del catálogo, Visitas al negocio
+- [x] URL opcional según objetivo (no mostrar si es interacción/seguidores)
+- [x] Todas las ubicaciones Meta e Instagram (Feed, Stories, Reels, Marketplace, Columna derecha, Audience Network, Messenger, etc.)
+- [x] Navegación libre entre pasos 1→3 sin bloqueos
+- [x] Creativos externos: poder subir imagen/vídeo propio
+- [x] Selector de creativos desde biblioteca generada
+
+### Dashboard
+- [x] Widgets del dashboard clicables (navegan a la sección correspondiente)
+- [x] Métricas seleccionables (el usuario elige qué KPIs mostrar)
+- [x] Panel personalizable: selector de métricas visibles
+- [x] Acceso rápido desde métricas a campañas activas
+
+### Navegación Global
+- [x] Botón atrás no sale de la app (usa history.back() interno)
+- [ ] Breadcrumbs en páginas de detalle (pendiente)
