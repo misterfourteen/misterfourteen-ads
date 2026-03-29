@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-import { FileText, Copy, Loader2, AlertCircle, RefreshCw, Sparkles, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, Copy, Loader2, AlertCircle, RefreshCw, Sparkles, Check, ChevronDown, ChevronUp, Edit2, Save, X, History } from "lucide-react";
 import { Streamdown } from "streamdown";
 
 const DURATIONS = [
@@ -50,6 +50,8 @@ interface ScriptItem {
   script: string;
   style: string;
   tone: string;
+  editing?: boolean;
+  editDraft?: string;
 }
 
 export default function GenerateScript() {
@@ -64,6 +66,8 @@ export default function GenerateScript() {
   const [generatedScripts, setGeneratedScripts] = useState<ScriptItem[]>([]);
   const [activeTab, setActiveTab] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
+  const [editingScript, setEditingScript] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState("");
 
   const { data: brain } = trpc.brandBrain.getMine.useQuery();
   const { data: history, refetch } = trpc.generate.history.useQuery({ type: "script" });
@@ -227,20 +231,26 @@ export default function GenerateScript() {
             {/* Quantity */}
             <div>
               <Label className="text-xs text-muted-foreground mb-2 block font-medium">Variaciones a generar</Label>
-              <div className="flex gap-2">
-                {[1, 2, 3].map(q => (
-                  <button
-                    key={q}
-                    onClick={() => setQuantity(q)}
-                    className={`flex-1 py-2.5 rounded-lg border text-sm font-semibold transition-all ${quantity === q ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}
-                  >
-                    {q}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2">
+                <button onClick={() => setQuantity(v => Math.max(1, v - 1))} className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-secondary transition-colors text-sm font-bold">-</button>
+                <input
+                  type="number" min={1} max={10} value={quantity}
+                  onChange={e => setQuantity(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+                  className="w-14 text-center h-8 text-sm bg-secondary/50 border border-border rounded-lg"
+                />
+                <button onClick={() => setQuantity(v => Math.min(10, v + 1))} className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-secondary transition-colors text-sm font-bold">+</button>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 5].map(q => (
+                    <button key={q} onClick={() => setQuantity(q)}
+                      className={`w-7 h-7 rounded text-xs border transition-all ${quantity === q ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}>
+                      {q}
+                    </button>
+                  ))}
+                </div>
               </div>
               {quantity > 1 && (
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  ⚡ {quantity} guiones con enfoques diferentes en paralelo
+                  ⚡ {quantity} guiones con enfoques diferentes
                 </p>
               )}
             </div>
@@ -319,26 +329,45 @@ export default function GenerateScript() {
                     </Badge>
                   </div>
                   <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => copyToClipboard(generatedScripts[activeTab]?.script ?? "")}
-                    >
-                      <Copy className="w-3 h-3 mr-1.5" /> Copiar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleGenerate}
-                      disabled={generateMutation.isPending}
-                    >
-                      <RefreshCw className="w-3 h-3 mr-1.5" /> Regenerar
-                    </Button>
+                    {editingScript === activeTab ? (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => { const updated = [...generatedScripts]; updated[activeTab] = { ...updated[activeTab], script: editDraft }; setGeneratedScripts(updated); setEditingScript(null); toast.success("Guión editado"); }} className="text-xs h-7">
+                          <Save className="w-3 h-3 mr-1" /> Guardar
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingScript(null)} className="text-xs h-7">
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => { setEditDraft(generatedScripts[activeTab]?.script ?? ""); setEditingScript(activeTab); }} className="text-xs h-7">
+                          <Edit2 className="w-3 h-3 mr-1" /> Editar
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => copyToClipboard(generatedScripts[activeTab]?.script ?? "")} className="text-xs h-7">
+                          <Copy className="w-3 h-3 mr-1.5" /> Copiar
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={handleGenerate} disabled={generateMutation.isPending} className="text-xs h-7">
+                          <RefreshCw className="w-3 h-3 mr-1.5" /> Regenerar
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                <div className="prose prose-sm prose-invert max-w-none border-t border-border/30 pt-4">
-                  <Streamdown>{generatedScripts[activeTab]?.script ?? ""}</Streamdown>
+                <div className="border-t border-border/30 pt-4">
+                  {editingScript === activeTab ? (
+                    <textarea
+                      value={editDraft}
+                      onChange={e => setEditDraft(e.target.value)}
+                      rows={20}
+                      className="w-full bg-secondary/30 border border-primary/30 rounded-lg p-3 text-sm font-mono resize-none focus:outline-none focus:border-primary"
+                      autoFocus
+                    />
+                  ) : (
+                    <div className="prose prose-sm prose-invert max-w-none">
+                      <Streamdown>{generatedScripts[activeTab]?.script ?? ""}</Streamdown>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -20,6 +20,10 @@ import ContentLibrary from "./pages/ContentLibrary";
 import Templates from "./pages/Templates";
 import ABTesting from "./pages/ABTesting";
 import CaseStudies from "./pages/CaseStudies";
+import Profile from "./pages/Profile";
+import LandingBuilder from "./pages/LandingBuilder";
+import Pipelines from "./pages/Pipelines";
+import CompetitorResearch from "./pages/CompetitorResearch";
 import SupportChat from "./components/SupportChat";
 import DashboardLayout from "./components/DashboardLayout";
 import { useAuth } from "./_core/hooks/useAuth";
@@ -146,6 +150,34 @@ function Router() {
         {() => (
           <DashboardLayout>
             <ProtectedRoute component={AdminPanel} adminOnly />
+          </DashboardLayout>
+        )}
+      </Route>
+      <Route path="/profile">
+        {() => (
+          <DashboardLayout>
+            <ProtectedRoute component={Profile} />
+          </DashboardLayout>
+        )}
+      </Route>
+      <Route path="/landing-builder">
+        {() => (
+          <DashboardLayout>
+            <ProtectedRoute component={LandingBuilder} />
+          </DashboardLayout>
+        )}
+      </Route>
+      <Route path="/pipelines">
+        {() => (
+          <DashboardLayout>
+            <ProtectedRoute component={Pipelines} />
+          </DashboardLayout>
+        )}
+      </Route>
+      <Route path="/competitor-research">
+        {() => (
+          <DashboardLayout>
+            <ProtectedRoute component={CompetitorResearch} />
           </DashboardLayout>
         )}
       </Route>

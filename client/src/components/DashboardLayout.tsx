@@ -28,7 +28,8 @@ import { useIsMobile } from "@/hooks/useMobile";
 import {
   LayoutDashboard, Brain, Sparkles, FileText, ImageIcon,
   Megaphone, PlusCircle, Link2, BarChart3, Settings,
-  LogOut, PanelLeft, Shield, ChevronDown, Zap, BookOpen, Video, LayoutTemplate, FlaskConical
+  LogOut, PanelLeft, Shield, ChevronDown, Zap, BookOpen, Video, LayoutTemplate, FlaskConical,
+  Layout, MessageSquare, Search, User
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -50,6 +51,7 @@ const menuGroups = [
       { icon: Sparkles, label: "Generar Copy", path: "/generate/copy" },
       { icon: Video, label: "Generar Guión", path: "/generate/script" },
       { icon: ImageIcon, label: "Generar Imagen", path: "/generate/image" },
+      { icon: Layout, label: "Landing Page", path: "/landing-builder" },
       { icon: BookOpen, label: "Mi Biblioteca", path: "/library" },
       { icon: LayoutTemplate, label: "Plantillas", path: "/templates" },
       { icon: FlaskConical, label: "A/B Testing", path: "/ab-testing" },
@@ -61,6 +63,13 @@ const menuGroups = [
       { icon: Megaphone, label: "Mis Campañas", path: "/campaigns" },
       { icon: PlusCircle, label: "Nueva Campaña", path: "/campaigns/new" },
       { icon: Link2, label: "Conectar Meta", path: "/meta-connect" },
+    ],
+  },
+  {
+    label: "Herramientas Pro",
+    items: [
+      { icon: MessageSquare, label: "Pipelines", path: "/pipelines" },
+      { icon: Search, label: "Investigación", path: "/competitor-research" },
     ],
   },
 ];
@@ -278,6 +287,10 @@ function DashboardLayoutContent({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => setLocation("/profile")}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Mi perfil</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setLocation("/pricing")}>
                   <BarChart3 className="mr-2 h-4 w-4" />
                   <span>Cambiar plan</span>

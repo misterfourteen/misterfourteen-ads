@@ -119,6 +119,7 @@ const generateRouter = router({
         objective: z.string(),
         adFormat: z.string(),
         additionalContext: z.string().optional(),
+        variantCount: z.number().min(1).max(20).optional().default(3),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -299,8 +300,9 @@ Incluye indicaciones de cámara entre corchetes y texto en pantalla en MAYÚSCUL
       z.object({
         adFormat: z.enum(["feed", "story", "reel_cover", "banner", "carousel", "portrait"]),
         concept: z.string(),
-        visualStyle: z.enum(["photorealistic", "illustration", "minimalist", "bold", "cinematic"]).optional(),
-        quantity: z.number().min(1).max(4).optional().default(1),
+        visualStyle: z.enum(["free", "photorealistic", "illustration", "minimalist", "bold", "cinematic"]).optional(),
+        quantity: z.number().min(1).max(8).optional().default(1),
+        useBrandPalette: z.boolean().optional().default(false),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -458,6 +460,223 @@ Devuelve JSON con esta estructura exacta:
       const raw = response.choices[0]?.message?.content ?? "{}";
       const parsed = JSON.parse(typeof raw === "string" ? raw : JSON.stringify(raw));
       return parsed;
+    }),
+
+  landing: protectedProcedure
+    .input(z.object({
+      landingType: z.enum(["lead_capture", "sales", "webinar", "challenge", "consultation"]),
+      landingStyle: z.enum(["modern_dark", "clean_white", "bold_gradient", "trust_blue"]),
+      productName: z.string(),
+      targetAudience: z.string().optional(),
+      mainBenefit: z.string(),
+      offer: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const brain = await getBrandBrainByUserId(ctx.user.id);
+      if (!brain?.isComplete) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Completa tu Brand Brain primero" });
+
+      const styleGuide: Record<string, string> = {
+        modern_dark: "dark background (#0a0a0a), neon accent (#8b5cf6), white text, bold typography",
+        clean_white: "white background, dark text, minimal design, professional",
+        bold_gradient: "gradient background (purple to orange), white text, high contrast",
+        trust_blue: "deep blue (#1e3a5f), white text, trust-building design",
+      };
+      const typeGuide: Record<string, string> = {
+        lead_capture: "form with name+email, 3-5 bullet benefits, social proof",
+        sales: "VSL placeholder, problem-agitate-solution, price reveal, CTA button",
+        webinar: "event date/time placeholder, registration form, what you'll learn section",
+        challenge: "5-day challenge structure, community CTA, daily wins preview",
+        consultation: "calendar booking CTA, credibility section, what to expect",
+      };
+
+      const systemMsg = brain.masterPrompt ?? `Eres un experto en diseño de landing pages de alta conversión para el sector fitness online.`;
+      const userMsg = `Genera una landing page HTML completa y funcional con las siguientes especificaciones:
+
+Producto: ${input.productName}
+Beneficio principal: ${input.mainBenefit}
+Tipo: ${typeGuide[input.landingType]}
+Estilo: ${styleGuide[input.landingStyle]}
+Público: ${input.targetAudience ?? brain.targetPains ?? "entrenadores y nutricionistas online"}
+Oferta: ${input.offer ?? "Consultar precio"}
+Marca: ${brain.businessName ?? ""}
+Colores de marca: primario ${brain.primaryColor ?? "#8b5cf6"}, secundario ${brain.secondaryColor ?? "#6d28d9"}
+
+Requirements:
+- HTML completo con CSS inline (no external dependencies)
+- Responsive mobile-first
+- Sección hero con headline impactante
+- Sección de beneficios/características
+- Sección de prueba social (placeholder testimonios)
+- CTA principal destacado
+- Footer básico
+- Formulario de captación (si aplica al tipo)
+- Todo el texto en español
+- Diseño profesional y de alta conversión
+
+Devuelve SOLO el código HTML completo, sin explicaciones ni markdown.`;
+
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: systemMsg },
+          { role: "user", content: userMsg },
+        ],
+      });
+
+      const html = response.choices[0]?.message?.content ?? "";
+      const cleanHtml = typeof html === "string" ? html.replace(/^```html\n?/, "").replace(/\n?```$/, "") : "";
+      return { html: cleanHtml };
+    }),
+
+  pipeline: protectedProcedure
+    .input(z.object({
+      platform: z.enum(["whatsapp", "instagram", "facebook"]),
+      pipelineType: z.enum(["welcome", "nurture", "sales", "reactivation", "post_purchase", "keyword_trigger"]),
+      objective: z.string(),
+      keyword: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const brain = await getBrandBrainByUserId(ctx.user.id);
+      if (!brain?.isComplete) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Completa tu Brand Brain primero" });
+
+      const platformNames: Record<string, string> = { whatsapp: "WhatsApp", instagram: "Instagram DM", facebook: "Facebook Messenger" };
+      const typeNames: Record<string, string> = { welcome: "bienvenida", nurture: "nutrici\u00f3n de leads", sales: "cierre de ventas", reactivation: "reactivaci\u00f3n", post_purchase: "post-compra", keyword_trigger: "trigger por palabra clave" };
+
+      const systemMsg = `Eres un experto en automatizaci\u00f3n de mensajer\u00eda y pipelines de ventas para el sector fitness online. Creas secuencias de mensajes naturales, conversacionales y orientadas a conversi\u00f3n. Marca: ${brain.businessName ?? ""}. Tono: ${brain.communicationTone ?? "direct"}.`;
+      const userMsg = `Crea un pipeline de ${typeNames[input.pipelineType]} para ${platformNames[input.platform]}.
+
+Objetivo: ${input.objective}
+${input.keyword ? `Palabra clave trigger: "${input.keyword}"` : ""}
+Negocio: ${brain.businessName ?? ""}
+Nicho: ${brain.niche ?? "fitness online"}
+
+Devuelve un JSON con esta estructura exacta:
+{
+  "steps": [
+    { "id": 1, "delay": "Inmediato", "type": "message", "message": "texto del mensaje" },
+    { "id": 2, "delay": "1 hora despu\u00e9s", "type": "question", "message": "texto" },
+    { "id": 3, "delay": "D\u00eda 2", "type": "cta", "message": "texto con CTA" }
+  ],
+  "summary": "breve descripci\u00f3n del pipeline"
+}
+
+Types: "message" (info), "question" (pregunta para cualificar), "cta" (llamada a la acci\u00f3n).
+Genera entre 4 y 7 pasos. Mensajes naturales, en espa\u00f1ol, sin emojis excesivos.`;
+
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: systemMsg },
+          { role: "user", content: userMsg },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "pipeline_result",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                steps: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      id: { type: "integer" },
+                      delay: { type: "string" },
+                      type: { type: "string" },
+                      message: { type: "string" },
+                    },
+                    required: ["id", "delay", "type", "message"],
+                    additionalProperties: false,
+                  },
+                },
+                summary: { type: "string" },
+              },
+              required: ["steps", "summary"],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+
+      const raw = response.choices[0]?.message?.content ?? "{}";
+      const parsed = JSON.parse(typeof raw === "string" ? raw : JSON.stringify(raw));
+      return { steps: parsed.steps ?? [], content: parsed.summary ?? "" };
+    }),
+
+  analyzeCompetitor: protectedProcedure
+    .input(z.object({
+      competitorName: z.string().optional(),
+      niche: z.string(),
+      country: z.string().optional().default("ES"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const brain = await getBrandBrainByUserId(ctx.user.id);
+
+      const systemMsg = `Eres un experto en análisis de publicidad digital y estrategia competitiva en Meta Ads para el sector fitness online. Analizas patrones de anuncios, hooks, ángulos y estrategias de la competencia para extraer insights accionables.`;
+      const userMsg = `Realiza un análisis estratégico de la competencia para:
+
+${input.competitorName ? `Competidor: ${input.competitorName}` : ""}
+Nicho: ${input.niche}
+País: ${input.country}
+${brain ? `Mi negocio: ${brain.businessName ?? ""} - Diferenciador: ${brain.mainDifferentiator ?? ""}` : ""}
+
+El análisis debe incluir:
+1. **Patrones de hooks** más usados en este nicho
+2. **Ángulos publicitarios** dominantes (dolor, deseo, autoridad, social proof, etc.)
+3. **Formatos de anuncio** más efectivos (video, imagen, carrusel)
+4. **CTAs** más comunes y efectivos
+5. **Oportunidades de diferenciación** para destacar frente a la competencia
+6. **Recomendaciones específicas** para crear anuncios superiores
+
+Devuelve un JSON con esta estructura:
+{
+  "analysis": "análisis completo en markdown",
+  "insights": [
+    { "hook": "texto del hook", "format": "Video/Imagen/Carrusel", "objective": "objetivo", "angle": "ángulo", "cta": "CTA", "strength": "por qué funciona" }
+  ]
+}`;
+
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: systemMsg },
+          { role: "user", content: userMsg },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "competitor_analysis",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                analysis: { type: "string" },
+                insights: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      hook: { type: "string" },
+                      format: { type: "string" },
+                      objective: { type: "string" },
+                      angle: { type: "string" },
+                      cta: { type: "string" },
+                      strength: { type: "string" },
+                    },
+                    required: ["hook", "format", "objective", "angle", "cta", "strength"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: ["analysis", "insights"],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+
+      const raw = response.choices[0]?.message?.content ?? "{}";
+      const parsed = JSON.parse(typeof raw === "string" ? raw : JSON.stringify(raw));
+      return { analysis: parsed.analysis ?? "", insights: parsed.insights ?? [] };
     }),
 });
 // ─── Campaigns Routerr ──────────────────────────────────────────────────────────
@@ -679,6 +898,42 @@ No inventes funcionalidades que no existen. Si no sabes algo, dílo con honestid
     }),
 });
 
+// ─── Profile Router ────────────────────────────────────────────────────────────────────────────
+const profileRouter = router({
+  update: protectedProcedure
+    .input(z.object({
+      name: z.string().min(1).max(128).optional(),
+      email: z.string().email().optional(),
+      avatarUrl: z.string().url().optional().or(z.literal("")),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const updates: Record<string, string> = {};
+      if (input.name !== undefined) updates.name = input.name;
+      if (input.email !== undefined) updates.email = input.email;
+      if (input.avatarUrl !== undefined) updates.avatarUrl = input.avatarUrl;
+      await db.update(users).set(updates).where(eq(users.id, ctx.user.id));
+      return { success: true };
+    }),
+
+  saveDashboardLayout: protectedProcedure
+    .input(z.object({ layout: z.string() })) // JSON string
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      await db.update(users).set({ dashboardLayout: input.layout }).where(eq(users.id, ctx.user.id));
+      return { success: true };
+    }),
+
+  getDashboardLayout: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) return null;
+    const [row] = await db.select({ dashboardLayout: users.dashboardLayout }).from(users).where(eq(users.id, ctx.user.id));
+    return row?.dashboardLayout ?? null;
+  }),
+});
+
 // ─── App Router ─────────────────────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -694,8 +949,9 @@ export const appRouter = router({
   generate: generateRouter,
   campaigns: campaignsRouter,
   meta: metaRouter,
-   admin: adminRouter,
+  admin: adminRouter,
   stripe: stripeRouter,
   support: supportRouter,
+  profile: profileRouter,
 });
 export type AppRouter = typeof appRouter;
