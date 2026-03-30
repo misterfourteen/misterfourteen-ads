@@ -78,7 +78,6 @@ export default function GenerateImage() {
         concept: usedConcept,
         visualStyle,
         quantity,
-        useBrandPalette: usePalette,
       });
       const fallback: GeneratedImageItem = { id: result.id, imageUrl: result.imageUrl ?? "", format: usedFormat, style: visualStyle, concept: usedConcept };
       const images: GeneratedImageItem[] = (result.images as GeneratedImageItem[] | undefined)?.map(img => ({ ...img, concept: usedConcept })) ?? [fallback];

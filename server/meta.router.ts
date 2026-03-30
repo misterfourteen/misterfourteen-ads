@@ -310,21 +310,21 @@ export const metaRouter = router({
             status: campaign.status,
             objective: campaign.objective,
             dailyBudget: campaign.daily_budget
-              ? parseFloat(campaign.daily_budget) / 100
+              ? String(parseFloat(campaign.daily_budget) / 100)
               : null,
             lifetimeBudget: campaign.lifetime_budget
-              ? parseFloat(campaign.lifetime_budget) / 100
+              ? String(parseFloat(campaign.lifetime_budget) / 100)
               : null,
             impressions: parseInt(ins?.impressions ?? "0"),
             clicks: parseInt(ins?.clicks ?? "0"),
-            spend: parseFloat(ins?.spend ?? "0"),
+            spend: String(parseFloat(ins?.spend ?? "0")),
             reach: parseInt(ins?.reach ?? "0"),
-            ctr: parseFloat(ins?.ctr ?? "0"),
-            cpc: parseFloat(ins?.cpc ?? "0"),
-            cpm: parseFloat(ins?.cpm ?? "0"),
+            ctr: String(parseFloat(ins?.ctr ?? "0")),
+            cpc: String(parseFloat(ins?.cpc ?? "0")),
+            cpm: String(parseFloat(ins?.cpm ?? "0")),
             conversions: parseInt(conversions),
-            roas: parseFloat(roas),
-            frequency: parseFloat(ins?.frequency ?? "0"),
+            roas: String(parseFloat(roas)),
+            frequency: String(parseFloat(ins?.frequency ?? "0")),
             rawData: { campaign, insights: ins },
             lastSyncAt: now,
           })
@@ -334,17 +334,17 @@ export const metaRouter = router({
               status: campaign.status,
               objective: campaign.objective,
               dailyBudget: campaign.daily_budget
-                ? parseFloat(campaign.daily_budget) / 100
+                ? String(parseFloat(campaign.daily_budget) / 100)
                 : null,
               impressions: parseInt(ins?.impressions ?? "0"),
               clicks: parseInt(ins?.clicks ?? "0"),
-              spend: parseFloat(ins?.spend ?? "0"),
+              spend: String(parseFloat(ins?.spend ?? "0")),
               reach: parseInt(ins?.reach ?? "0"),
-              ctr: parseFloat(ins?.ctr ?? "0"),
-              cpc: parseFloat(ins?.cpc ?? "0"),
-              cpm: parseFloat(ins?.cpm ?? "0"),
+              ctr: String(parseFloat(ins?.ctr ?? "0")),
+              cpc: String(parseFloat(ins?.cpc ?? "0")),
+              cpm: String(parseFloat(ins?.cpm ?? "0")),
               conversions: parseInt(conversions),
-              roas: parseFloat(roas),
+              roas: String(parseFloat(roas)),
               rawData: { campaign, insights: ins },
               lastSyncAt: now,
               updatedAt: now,
@@ -425,13 +425,13 @@ export const metaRouter = router({
           metaAdSetId: adSet.id,
           name: adSet.name,
           status: adSet.status,
-          dailyBudget: adSet.daily_budget ? parseFloat(adSet.daily_budget) / 100 : null,
+          dailyBudget: adSet.daily_budget ? String(parseFloat(adSet.daily_budget) / 100) : null,
           targeting: adSet.targeting ?? {},
           impressions: parseInt(ins?.impressions ?? "0"),
           clicks: parseInt(ins?.clicks ?? "0"),
-          spend: parseFloat(ins?.spend ?? "0"),
-          ctr: parseFloat(ins?.ctr ?? "0"),
-          cpc: parseFloat(ins?.cpc ?? "0"),
+          spend: String(parseFloat(ins?.spend ?? "0")),
+          ctr: String(parseFloat(ins?.ctr ?? "0")),
+          cpc: String(parseFloat(ins?.cpc ?? "0")),
           rawData: adSet,
           lastSyncAt: now,
         };
@@ -524,9 +524,9 @@ export const metaRouter = router({
           body: ad.creative?.body ?? null,
           impressions: parseInt(ins?.impressions ?? "0"),
           clicks: parseInt(ins?.clicks ?? "0"),
-          spend: parseFloat(ins?.spend ?? "0"),
-          ctr: parseFloat(ins?.ctr ?? "0"),
-          cpc: parseFloat(ins?.cpc ?? "0"),
+          spend: String(parseFloat(ins?.spend ?? "0")),
+          ctr: String(parseFloat(ins?.ctr ?? "0")),
+          cpc: String(parseFloat(ins?.cpc ?? "0")),
           rawData: ad,
           lastSyncAt: now,
         };
@@ -671,14 +671,14 @@ export const metaRouter = router({
       return {
         impressions: parseInt(ins.impressions ?? "0"),
         clicks: parseInt(ins.clicks ?? "0"),
-        spend: parseFloat(ins.spend ?? "0"),
+        spend: String(parseFloat(ins.spend ?? "0")),
         reach: parseInt(ins.reach ?? "0"),
-        ctr: parseFloat(ins.ctr ?? "0"),
-        cpc: parseFloat(ins.cpc ?? "0"),
-        cpm: parseFloat(ins.cpm ?? "0"),
+        ctr: String(parseFloat(ins.ctr ?? "0")),
+        cpc: String(parseFloat(ins.cpc ?? "0")),
+        cpm: String(parseFloat(ins.cpm ?? "0")),
         conversions,
         roas,
-        frequency: parseFloat(ins.frequency ?? "0"),
+        frequency: String(parseFloat(ins.frequency ?? "0")),
       };
     }),
 
@@ -767,7 +767,7 @@ export const metaRouter = router({
 
       await db
         .update(metaCampaignCache)
-        .set({ dailyBudget: input.dailyBudget, updatedAt: new Date() })
+        .set({ dailyBudget: String(input.dailyBudget), updatedAt: new Date() })
         .where(
           and(
             eq(metaCampaignCache.userId, ctx.user.id),
@@ -776,6 +776,58 @@ export const metaRouter = router({
         );
 
       return { success: true };
+    }),
+
+  // Legacy saveConnection (for MetaConnect.tsx compatibility)
+  saveConnection: protectedProcedure
+    .input(
+      z.object({
+        accessToken: z.string(),
+        metaUserId: z.string().optional(),
+        metaUserName: z.string().optional(),
+        adAccountId: z.string().optional(),
+        adAccountName: z.string().optional(),
+        pageId: z.string().optional(),
+        pageName: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await db
+        .insert(metaConnections)
+        .values({
+          userId: ctx.user.id,
+          accessToken: input.accessToken,
+          metaUserId: input.metaUserId ?? "",
+          metaUserName: input.metaUserName ?? null,
+          adAccountId: input.adAccountId ?? null,
+          adAccountName: input.adAccountName ?? null,
+          pageId: input.pageId ?? null,
+          pageName: input.pageName ?? null,
+          isActive: true,
+        })
+        .onDuplicateKeyUpdate({
+          set: {
+            accessToken: input.accessToken,
+            metaUserId: input.metaUserId ?? "",
+            metaUserName: input.metaUserName ?? null,
+            adAccountId: input.adAccountId ?? null,
+            adAccountName: input.adAccountName ?? null,
+            pageId: input.pageId ?? null,
+            pageName: input.pageName ?? null,
+            isActive: true,
+            updatedAt: new Date(),
+          },
+        });
+      return { success: true };
+    }),
+
+  // Publish campaign (placeholder for Meta Marketing API)
+  publishCampaign: protectedProcedure
+    .input(z.object({ campaignId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      // Placeholder: in production this would call Meta Marketing API
+      // For now just returns success
+      return { success: true, campaignId: input.campaignId, status: "active" };
     }),
 
   // Disconnect Meta account

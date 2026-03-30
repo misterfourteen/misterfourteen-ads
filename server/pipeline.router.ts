@@ -179,7 +179,7 @@ export const pipelineRouter = router({
         email: input.email ?? null,
         phone: input.phone ?? null,
         notes: input.notes ?? null,
-        value: input.value ?? null,
+        value: input.value != null ? String(input.value) : null,
         tags: JSON.stringify(input.tags ?? []),
         source: input.source,
         position,
@@ -230,7 +230,7 @@ export const pipelineRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const lead = await db.query.leads.findFirst({
+      const lead = await (db as any).query.leads.findFirst({
         where: and(eq(leads.id, input.leadId), eq(leads.userId, ctx.user.id)),
       });
       if (!lead) throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found" });
@@ -282,7 +282,7 @@ export const pipelineRouter = router({
   getLead: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
-      const lead = await db.query.leads.findFirst({
+      const lead = await (db as any).query.leads.findFirst({
         where: and(eq(leads.id, input.id), eq(leads.userId, ctx.user.id)),
       });
       if (!lead) throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found" });
@@ -303,12 +303,12 @@ export const pipelineRouter = router({
         leadId: z.number(),
         type: z.enum(["note", "email", "call", "whatsapp", "stage_change", "task", "meeting"]),
         content: z.string(),
-        metadata: z.record(z.any()).optional(),
+        metadata: z.record(z.string(), z.any()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       // Verify lead ownership
-      const lead = await db.query.leads.findFirst({
+      const lead = await (db as any).query.leads.findFirst({
         where: and(eq(leads.id, input.leadId), eq(leads.userId, ctx.user.id)),
       });
       if (!lead) throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found" });
@@ -351,8 +351,8 @@ export const pipelineRouter = router({
 
       const name =
         fields["full_name"] ??
-        `${fields["first_name"] ?? ""} ${fields["last_name"] ?? ""}`.trim() ||
-        "Lead sin nombre";
+        (`${fields["first_name"] ?? ""} ${fields["last_name"] ?? ""}`.trim() ||
+        "Lead sin nombre");
       const email = fields["email"] ?? null;
       const phone = fields["phone_number"] ?? fields["phone"] ?? null;
 
@@ -408,13 +408,13 @@ export const pipelineRouter = router({
         actions: z.array(
           z.object({
             type: z.enum(["send_whatsapp", "send_email", "add_tag", "move_stage", "notify_owner"]),
-            config: z.record(z.any()),
+            config: z.record(z.string(), z.any()),
           })
         ),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const [result] = await db.insert(pipelineAutomations).values({
+      const [result] = await (db as any).insert(pipelineAutomations).values({
         userId: ctx.user.id,
         name: input.name,
         trigger: JSON.stringify(input.trigger),
@@ -497,7 +497,7 @@ async function runAutomations(
       for (const action of actions) {
         // Execute actions (in production, these would be queued)
         if (action.type === "add_tag" && action.config?.tag) {
-          const lead = await db.query.leads.findFirst({
+          const lead = await (db as any).query.leads.findFirst({
             where: eq(leads.id, context.leadId),
           });
           if (lead) {

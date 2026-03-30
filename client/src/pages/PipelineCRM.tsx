@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,7 +69,7 @@ import { es } from "date-fns/locale";
 type Stage = {
   id: number;
   name: string;
-  color: string;
+  color: string | null;
   position: number;
   leads: Lead[];
   leadCount: number;
@@ -80,8 +80,8 @@ type Lead = {
   name: string;
   email?: string | null;
   phone?: string | null;
-  source: string;
-  value?: number | null;
+  source: string | null;
+  value?: number | string | null;
   tags?: string | null;
   notes?: string | null;
   stageId: number;
@@ -172,8 +172,8 @@ function LeadCard({
 
       <div className="flex items-center gap-2 flex-wrap">
         <div className={cn("flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-md", "bg-muted text-muted-foreground")}>
-          {sourceIcon(lead.source)}
-          <span>{sourceLabel(lead.source)}</span>
+          {sourceIcon(lead.source ?? "manual")}
+          <span>{sourceLabel(lead.source ?? "manual")}</span>
         </div>
 
         {lead.value && Number(lead.value) > 0 && (
@@ -232,7 +232,7 @@ function KanbanColumn({
       {/* Column header */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: stage.color }} />
+          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: stage.color ?? "#6366f1" }} />
           <span className="text-sm font-medium">{stage.name}</span>
           <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
             {stage.leadCount}
@@ -284,7 +284,7 @@ function KanbanColumn({
 // ─── Lead Detail Sheet ────────────────────────────────────────────────────────
 
 function LeadSheet({ leadId, onClose }: { leadId: number; onClose: () => void }) {
-  const { toast } = useToast();
+  
   const [activityTab, setActivityTab] = useState("timeline");
   const [noteText, setNoteText] = useState("");
   const utils = trpc.useUtils();
@@ -295,7 +295,7 @@ function LeadSheet({ leadId, onClose }: { leadId: number; onClose: () => void })
     onSuccess: () => {
       setNoteText("");
       utils.pipeline.getLead.invalidate({ id: leadId });
-      toast({ title: "Actividad añadida" });
+      toast.success("Actividad añadida");
     },
   });
 
@@ -485,7 +485,7 @@ function CreateLeadDialog({
   stageId: number;
   onClose: () => void;
 }) {
-  const { toast } = useToast();
+  
   const utils = trpc.useUtils();
   const [form, setForm] = useState({
     name: "", email: "", phone: "", notes: "",
@@ -495,10 +495,10 @@ function CreateLeadDialog({
   const createMut = trpc.pipeline.createLead.useMutation({
     onSuccess: () => {
       utils.pipeline.getBoard.invalidate();
-      toast({ title: "Lead creado" });
+      toast.success("Lead creado");
       onClose();
     },
-    onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e) => toast.error(e.message),
   });
 
   return (
@@ -631,7 +631,7 @@ function StatsBar({ stats }: { stats: any }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function PipelinePage() {
-  const { toast } = useToast();
+  
   const utils = trpc.useUtils();
   const dragLeadRef = useRef<Lead | null>(null);
 
@@ -648,7 +648,7 @@ export default function PipelinePage() {
 
   const moveLeadMut = trpc.pipeline.moveLead.useMutation({
     onSuccess: () => utils.pipeline.getBoard.invalidate(),
-    onError: (e) => toast({ title: "Error al mover lead", description: e.message, variant: "destructive" }),
+    onError: (e) => toast.error(e.message),
   });
 
   const toggleAutomMut = trpc.pipeline.toggleAutomation.useMutation({
@@ -738,7 +738,7 @@ export default function PipelinePage() {
           {(filteredBoard?.stages ?? []).map((stage) => (
             <KanbanColumn
               key={stage.id}
-              stage={stage}
+              stage={stage as unknown as Stage}
               onDrop={handleDrop}
               onLeadClick={(lead) => setSelectedLeadId(lead.id)}
               onDragLead={(e, lead) => { e.dataTransfer.effectAllowed = "move"; dragLeadRef.current = lead; }}
@@ -760,7 +760,7 @@ export default function PipelinePage() {
         <div className="space-y-3 max-w-3xl">
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">{(automations ?? []).length} automatizaciones configuradas</p>
-            <Button size="sm" onClick={() => toast({ title: "Próximamente", description: "Editor de automatizaciones en construcción" })}>
+            <Button size="sm" onClick={() => toast.info("Editor de automatizaciones en construcción")}>
               <Plus className="w-4 h-4 mr-1.5" />
               Nueva automatización
             </Button>

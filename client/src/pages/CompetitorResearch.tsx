@@ -76,10 +76,11 @@ export default function CompetitorResearch() {
       const result = await analyzeMutation.mutateAsync({
         competitorName,
         niche: niche || brain?.niche || "fitness online",
-        country,
       });
-      setAnalysis(result.analysis);
-      setInsights(result.insights ?? []);
+      const rawResult = result as Record<string, unknown>;
+      setAnalysis(typeof rawResult.analysis === "string" ? rawResult.analysis : JSON.stringify(rawResult, null, 2));
+      const rawInsights = rawResult.insights;
+      setInsights(Array.isArray(rawInsights) ? (rawInsights as AdInsight[]) : []);
       toast.success("Análisis completado");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error al analizar";

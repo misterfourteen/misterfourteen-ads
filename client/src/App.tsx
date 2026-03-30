@@ -24,18 +24,9 @@ import Profile from "./pages/Profile";
 import LandingBuilder from "./pages/LandingBuilder";
 import Pipelines from "./pages/Pipelines";
 import CompetitorResearch from "./pages/CompetitorResearch";
-import SupportChat from "./components/SupportChat";
 import MetaSuite from "./pages/MetaSuite";
 import PipelineCRM from "./pages/PipelineCRM";
-```
-
----
-
-**Paso 4 — Añade las rutas**
-
-Ahora pulsa **Ctrl+F** para buscar. Escribe esto y pulsa Enter:
-```
-/competitor-research
+import SupportChat from "./components/SupportChat";
 import DashboardLayout from "./components/DashboardLayout";
 import { useAuth } from "./_core/hooks/useAuth";
 import { Loader2 } from "lucide-react";
@@ -199,7 +190,6 @@ function Router() {
           </DashboardLayout>
         )}
       </Route>
-
       <Route path="/pipeline-crm">
         {() => (
           <DashboardLayout>
@@ -207,21 +197,6 @@ function Router() {
           </DashboardLayout>
         )}
       </Route>
-```
-
-Cuando lo pegues debería quedar así:
-```
-194   </Route>          ← la línea que ya existe
-195                     ← línea nueva vacía
-196   <Route path="/meta-suite">
-...
-      </Route>
-      
-      <Route path="/pipeline-crm">
-...
-      </Route>
-      
-207   <Route path="/404"...    ← esto ya existía antes
       <Route path="/404" component={NotFound} />
       <Route path="/casos-de-exito" component={CaseStudies} />
       <Route component={NotFound} />

@@ -50,14 +50,12 @@ export default function LandingBuilder() {
     if (!productName || !mainBenefit) { toast.error("Rellena el producto y el beneficio principal"); return; }
     try {
       const result = await generateMutation.mutateAsync({
-        landingType,
-        landingStyle,
-        productName,
-        targetAudience,
-        mainBenefit,
-        offer,
+        type: landingType === "consultation" ? "lead_capture" : landingType,
+        style: landingStyle === "modern_dark" || landingStyle === "bold_gradient" ? "bold" : landingStyle === "clean_white" ? "minimal" : landingStyle === "trust_blue" ? "corporate" : "modern",
+        additionalContext: `Producto: ${productName}. Público: ${targetAudience}. Beneficio: ${mainBenefit}. Oferta: ${offer}`,
       });
-      setGeneratedCode(result.html);
+      const rawResult = result as Record<string, unknown>;
+      setGeneratedCode(typeof rawResult.html === "string" ? rawResult.html : JSON.stringify(rawResult, null, 2));
       toast.success("¡Landing page generada!");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error al generar";

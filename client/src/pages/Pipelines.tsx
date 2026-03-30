@@ -56,14 +56,22 @@ export default function Pipelines() {
     try {
       const result = await generateMutation.mutateAsync({
         platform,
-        pipelineType,
-        objective,
-        keyword: pipelineType === "keyword_trigger" ? keyword : undefined,
+        type: pipelineType,
+        steps: 5,
+        additionalContext: `Objetivo: ${objective}${pipelineType === "keyword_trigger" ? `. Palabra clave: ${keyword}` : ""}`,
       });
-      setRawContent(result.content);
-      // Parse steps from content
-      const steps: PipelineStep[] = result.steps ?? [];
-      setGeneratedPipeline(steps);
+      const rawResult = result as Record<string, unknown>;
+      const rawSteps = rawResult.steps;
+      const parsedSteps: PipelineStep[] = Array.isArray(rawSteps)
+        ? (rawSteps as Array<Record<string, unknown>>).map((s, i) => ({
+            id: i + 1,
+            delay: String(s.delay ?? `Día ${i + 1}`),
+            message: String(s.message ?? ""),
+            type: (["message", "question", "cta"].includes(String(s.type)) ? String(s.type) : "message") as "message" | "question" | "cta",
+          }))
+        : [];
+      setRawContent(parsedSteps.length > 0 ? JSON.stringify(rawResult) : JSON.stringify(rawResult));
+      setGeneratedPipeline(parsedSteps);
       toast.success("¡Pipeline generado!");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error al generar";

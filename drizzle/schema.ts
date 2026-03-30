@@ -8,7 +8,9 @@ import {
   json,
   boolean,
   decimal,
+  bigint,
 } from "drizzle-orm/mysql-core";
+import { relations } from "drizzle-orm";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -147,26 +149,6 @@ export type InsertBrandBrain = typeof brandBrains.$inferInsert;
 export type GeneratedContent = typeof generatedContents.$inferSelect;
 export type Campaign = typeof campaigns.$inferSelect;
 export type MetaConnection = typeof metaConnections.$inferSelect;
-/**
- * INSTRUCCIONES DE INTEGRACIÓN:
- * Añade este código al final de tu archivo drizzle/schema.ts existente.
- * El import de 'drizzle-orm/mysql-core' ya debería estar en tu schema.
- */
-
-import {
-  mysqlTable,
-  int,
-  varchar,
-  text,
-  boolean,
-  timestamp,
-  decimal,
-  bigint,
-  json,
-  mysqlEnum,
-} from "drizzle-orm/mysql-core";
-
-import { relations } from "drizzle-orm";
 
 // ─── Meta Suite Tables ────────────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -336,7 +336,7 @@ function AdSetDrilldown({ campaign, onClose }: { campaign: any; onClose: () => v
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function MetaSuite() {
-  const { toast } = useToast();
+  
   const [datePreset, setDatePreset] = useState<DatePreset>("last_30d");
   const [budgetDialog, setBudgetDialog] = useState<any>(null);
   const [drilldown, setDrilldown] = useState<any>(null);
@@ -369,13 +369,13 @@ export default function MetaSuite() {
 
   // Mutations
   const toggleMut = trpc.meta.toggleCampaignStatus.useMutation({
-    onSuccess: () => { refetchCampaigns(); toast({ title: "Estado actualizado" }); },
-    onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onSuccess: () => { refetchCampaigns(); toast.success("Estado actualizado"); },
+    onError: (e) => toast.error(e.message),
   });
 
   const budgetMut = trpc.meta.updateBudget.useMutation({
-    onSuccess: () => { setBudgetDialog(null); refetchCampaigns(); toast({ title: "Presupuesto actualizado" }); },
-    onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onSuccess: () => { setBudgetDialog(null); refetchCampaigns(); toast.success("Presupuesto actualizado"); },
+    onError: (e) => toast.error(e.message),
   });
 
   const forceSyncMut = trpc.meta.getCampaigns.useQuery(
@@ -440,7 +440,7 @@ export default function MetaSuite() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => { refetchCampaigns(); refetchSummary(); toast({ title: "Sincronizando datos..." }); }}
+            onClick={() => { refetchCampaigns(); refetchSummary(); toast.info("Sincronizando datos..."); }}
           >
             <RefreshCw className="w-4 h-4 mr-1.5" />
             Actualizar
