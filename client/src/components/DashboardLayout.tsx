@@ -205,8 +205,8 @@ function DashboardLayoutContent({
           {/* Nav */}
           <SidebarContent className="gap-0 py-2">
             {menuGroups.map((group) => (
-              <SidebarGroup key={group.label} className="py-1">
-                <SidebarGroupLabel className="text-xs text-muted-foreground/60 px-4 mb-1 uppercase tracking-wider">
+              <SidebarGroup key={group.label} className="py-2">
+                <SidebarGroupLabel className="text-xs text-muted-foreground/60 px-4 mb-2 uppercase tracking-wider">
                   {group.label}
                 </SidebarGroupLabel>
                 <SidebarMenu className="px-2">
@@ -232,8 +232,8 @@ function DashboardLayoutContent({
 
             {/* Admin link */}
             {user?.role === "admin" && (
-              <SidebarGroup className="py-1">
-                <SidebarGroupLabel className="text-xs text-muted-foreground/60 px-4 mb-1 uppercase tracking-wider">
+              <SidebarGroup className="py-2">
+                <SidebarGroupLabel className="text-xs text-muted-foreground/60 px-4 mb-2 uppercase tracking-wider">
                   Admin
                 </SidebarGroupLabel>
                 <SidebarMenu className="px-2">
