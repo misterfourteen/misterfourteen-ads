@@ -74,7 +74,7 @@ const menuGroups = [
       { icon: FlaskConical, label: "A/B Testing", path: "/ab-testing" },
     ],
   },
-];;
+];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 260;
