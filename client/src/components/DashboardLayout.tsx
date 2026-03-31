@@ -74,40 +74,7 @@ const menuGroups = [
       { icon: FlaskConical, label: "A/B Testing", path: "/ab-testing" },
     ],
   },
-];,
-  },
-  {
-    label: "Generadores IA",
-    items: [
-      { icon: Sparkles, label: "Generar Copy", path: "/generate/copy" },
-      { icon: Video, label: "Generar Guión", path: "/generate/script" },
-      { icon: ImageIcon, label: "Generar Imagen", path: "/generate/image" },
-      { icon: Layout, label: "Landing Page", path: "/landing-builder" },
-      { icon: BookOpen, label: "Mi Biblioteca", path: "/library" },
-      { icon: LayoutTemplate, label: "Plantillas", path: "/templates" },
-      { icon: FlaskConical, label: "A/B Testing", path: "/ab-testing" },
-    ],
-  },
-  {
-    label: "Campañas",
-    items: [
-      { icon: Megaphone, label: "Mis Campañas", path: "/campaigns" },
-      { icon: PlusCircle, label: "Nueva Campaña", path: "/campaigns/new" },
-      { icon: Link2, label: "Conectar Meta", path: "/meta-connect" },
-    ],
-  },
-  {
-    label: "Herramientas Pro",
-    items: [
-      { icon: MessageSquare, label: "Pipelines", path: "/pipelines" },
-      { icon: Search, label: "Investigación", path: "/competitor-research" },
-      { icon: BarChart3, label: "Meta Suite", path: "/meta-suite" },
-      { icon: LayoutDashboard, label: "Pipeline CRM", path: "/pipeline-crm" },
-    ],
-  },,
-    ],
-  },
-];
+];;
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 260;
