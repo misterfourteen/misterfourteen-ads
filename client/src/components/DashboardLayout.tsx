@@ -70,6 +70,10 @@ const menuGroups = [
     items: [
       { icon: MessageSquare, label: "Pipelines", path: "/pipelines" },
       { icon: Search, label: "Investigación", path: "/competitor-research" },
+      { icon: BarChart3, label: "Meta Suite", path: "/meta-suite" },
+      { icon: LayoutDashboard, label: "Pipeline CRM", path: "/pipeline-crm" },
+    ],
+  },,
     ],
   },
 ];
