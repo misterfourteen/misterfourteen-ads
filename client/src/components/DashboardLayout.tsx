@@ -203,13 +203,13 @@ function DashboardLayoutContent({
           </SidebarHeader>
 
           {/* Nav */}
-          <SidebarContent className="gap-0 py-2">
-            {menuGroups.map((group) => (
-              <SidebarGroup key={group.label} className="py-2">
-                <SidebarGroupLabel className="text-xs text-muted-foreground/60 px-4 mb-2 uppercase tracking-wider">
+          <SidebarContent className="gap-0 py-1 overflow-y-auto">
+            {menuGroups.map((group, groupIndex) => (
+              <SidebarGroup key={group.label} className="py-0">
+                <SidebarGroupLabel className={`text-[10px] font-semibold text-muted-foreground/50 px-4 pb-1 uppercase tracking-widest ${groupIndex === 0 ? "pt-3" : "pt-4"}`}>
                   {group.label}
                 </SidebarGroupLabel>
-                <SidebarMenu className="px-2">
+                <SidebarMenu className="px-2 space-y-0.5">
                   {group.items.map((item) => {
                     const isActive = location === item.path || location.startsWith(item.path + "/");
                     return (
@@ -218,10 +218,10 @@ function DashboardLayoutContent({
                           isActive={isActive}
                           onClick={() => setLocation(item.path)}
                           tooltip={item.label}
-                          className="h-9 transition-all font-normal"
+                          className="h-8 transition-all font-normal text-sm"
                         >
-                          <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
-                          <span>{item.label}</span>
+                          <item.icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                          <span className="truncate">{item.label}</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     );
@@ -232,17 +232,17 @@ function DashboardLayoutContent({
 
             {/* Admin link */}
             {user?.role === "admin" && (
-              <SidebarGroup className="py-2">
-                <SidebarGroupLabel className="text-xs text-muted-foreground/60 px-4 mb-2 uppercase tracking-wider">
+              <SidebarGroup className="py-0">
+                <SidebarGroupLabel className="text-[10px] font-semibold text-muted-foreground/50 px-4 pt-4 pb-1 uppercase tracking-widest">
                   Admin
                 </SidebarGroupLabel>
-                <SidebarMenu className="px-2">
+                <SidebarMenu className="px-2 space-y-0.5">
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       isActive={location === "/admin"}
                       onClick={() => setLocation("/admin")}
                       tooltip="Panel Admin"
-                      className="h-9"
+                      className="h-8 text-sm"
                     >
                       <Shield className="h-4 w-4 text-primary" />
                       <span>Panel Admin</span>
@@ -254,7 +254,7 @@ function DashboardLayoutContent({
 
             {/* Brand Brain status */}
             {!isCollapsed && !brandBrain?.isComplete && (
-              <div className="mx-3 mt-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <div className="mx-3 mt-3 mb-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
                 <p className="text-xs font-medium text-primary mb-1">Completa tu Brand Brain</p>
                 <p className="text-xs text-muted-foreground mb-2">Configura tu marca para activar los generadores de IA.</p>
                 <button
