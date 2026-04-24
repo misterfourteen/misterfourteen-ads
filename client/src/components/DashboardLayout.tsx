@@ -205,11 +205,11 @@ function DashboardLayoutContent({
           {/* Nav */}
           <SidebarContent className="gap-0 py-1 overflow-y-auto">
             {menuGroups.map((group, groupIndex) => (
-              <SidebarGroup key={group.label} className="py-0">
-                <SidebarGroupLabel className={`text-[10px] font-semibold text-muted-foreground/50 px-4 pb-1 uppercase tracking-widest ${groupIndex === 0 ? "pt-3" : "pt-4"}`}>
+              <SidebarGroup key={group.label} className={`px-2 py-0 ${groupIndex > 0 ? "mt-2 border-t border-border/30 pt-2" : "pt-1"}`}>
+                <SidebarGroupLabel className="text-[10px] font-semibold text-muted-foreground/50 px-2 h-6 mb-1 uppercase tracking-widest">
                   {group.label}
                 </SidebarGroupLabel>
-                <SidebarMenu className="px-2 space-y-0.5">
+                <SidebarMenu className="space-y-0.5">
                   {group.items.map((item) => {
                     const isActive = location === item.path || location.startsWith(item.path + "/");
                     return (
@@ -232,11 +232,11 @@ function DashboardLayoutContent({
 
             {/* Admin link */}
             {user?.role === "admin" && (
-              <SidebarGroup className="py-0">
-                <SidebarGroupLabel className="text-[10px] font-semibold text-muted-foreground/50 px-4 pt-4 pb-1 uppercase tracking-widest">
+              <SidebarGroup className="px-2 py-0 mt-2 border-t border-border/30 pt-2">
+                <SidebarGroupLabel className="text-[10px] font-semibold text-muted-foreground/50 px-2 h-6 mb-1 uppercase tracking-widest">
                   Admin
                 </SidebarGroupLabel>
-                <SidebarMenu className="px-2 space-y-0.5">
+                <SidebarMenu className="space-y-0.5">
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       isActive={location === "/admin"}
