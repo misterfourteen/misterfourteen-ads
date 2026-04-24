@@ -233,7 +233,7 @@ function DashboardLayoutContent({
             {/* Admin link */}
             {user?.role === "admin" && (
               <SidebarGroup className="px-2 py-0 mt-2 border-t border-border/30 pt-2">
-                <SidebarGroupLabel className="text-[10px] font-semibold text-muted-foreground/50 px-2 h-6 mb-1 uppercase tracking-widest">
+                <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground/60 px-2 h-6 mb-1 mt-4 uppercase tracking-widest">
                   Admin
                 </SidebarGroupLabel>
                 <SidebarMenu className="space-y-0.5">
